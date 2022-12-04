@@ -13,9 +13,8 @@ def get_classifier_token_id(tokenizer):
         return tokenizer.cls_token_id
     
 
-
 class NLI_XY_Dataset():
-    def __init__(self, rep_config, tokenizer):
+    def __init__(self, rep_config, tokenizer, counterfactual_contexts=False):
         self.input_df = None
         self.meta_df = None
         self.rep_config = rep_config
@@ -25,7 +24,7 @@ class NLI_XY_Dataset():
         # todo: calculate a new max_len for a given dataset?
         self.device = rep_config['device']
 
-    def from_contexts(self, data_dir):
+    def from_contexts(self, data_dir, counterfactual_contexts=False):
         contexts_tsv = os.path.join(data_dir, 'contexts.tsv')
         insertions_tsv = os.path.join(data_dir, 'insertions.tsv')
         contexts_df = pd.read_csv(contexts_tsv, sep='\t')
@@ -45,10 +44,15 @@ class NLI_XY_Dataset():
             input_sub_df, meta_sub_df = set_of_insertions_into_context(context_row,
                                                     insertions_df,
                                                     self.tokenizer)
-            monotonicity = context_row.monotonicity
-            context = context_row.context
-            source = context_row.source
+            if not counterfactual_contexts:
+                monotonicity = context_row.monotonicity
+                context = context_row.context
+            # TODO: incorporate counterfactual contexts here and in set_of_insertions call
+            # elif counterfactual_contexts:
+            #     monotonicity = context_reverse(context_row.monotonicity)
+            #     context = context_row.counterfactual_context
 
+            source = context_row.source
             meta_sub_df['context_monotonicity'] = monotonicity
             meta_sub_df['context'] = context
             meta_sub_df['source'] = source
@@ -62,11 +66,16 @@ class NLI_XY_Dataset():
         
         self.meta_df['gold_label'] = self.meta_df.apply(gold_labeller, axis=1)
 
+        if 'context_option' in self.rep_config:
+            self.context_option = self.rep_config['context_option']
+        else:
+            self.context_option = 'all'
+
         self.input_df, X_ranges, Y_ranges = prepare_model_inputs(self.input_tokens_df,
                 self.tokenizer, 
                 self.max_length, 
                 self.device,
-                self.rep_config['context_option'])
+                self.context_option)
 
         for index, input_ids in self.input_df['input_ids'].items():
             range_span = input_ids[X_ranges[index][0]:X_ranges[index][1]]
@@ -106,3 +115,13 @@ class NLI_XY_Dataset():
                 'insertion_pair': meta_row['insertion_pair'],
                 'insertion_rel': meta_row['insertion_rel']
                 }
+
+
+
+def context_reverse(monotonicity_value):
+    if monotonicity_value=="up":
+        return "down"
+    elif monotonicity_value=="down":
+        return "up"
+    else:
+        raise ValueError('Unrecognised monotonicity value!')

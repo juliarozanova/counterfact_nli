@@ -1,9 +1,7 @@
 from prefect import task
 import json
 
-@task
 def parse_encode_config(ENCODE_CONFIG_FILE: str):
-
 
     with open(ENCODE_CONFIG_FILE, 'r') as file:
         loaded_config = json.loads(file.read())

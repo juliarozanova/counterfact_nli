@@ -8,7 +8,6 @@ from transformers import (
     BertForMaskedLM, BertTokenizer,
     AutoModelForCausalLM, GPTNeoForCausalLM
 )
-from numerical_utils import convert_to_words
 
 
 class Model():
@@ -57,9 +56,9 @@ class Model():
     def set_vocab_subset(self, tokenizer, representation, max_n):
         if representation == 'arabic':
             self.vocab_subset = [tokenizer.encode('a ' + str(i))[1:] for i in range(max_n + 1)]
-        elif representation == 'words':
-            self.vocab_subset = [tokenizer.encode('a ' + convert_to_words(str(i)))[1:] for i in range(max_n + 1)]
-        else:
+        # elif representation == 'words':
+        #     self.vocab_subset = [tokenizer.encode('a ' + convert_to_words(str(i)))[1:] for i in range(max_n + 1)]
+        # else:
             raise Exception('Representation unknown: {}'.format(representation))
 
 

@@ -9,44 +9,19 @@ class Intervention():
     Wrapper for all the possible interventions
     '''
     def __init__(self,
-                 tokenizer,
-                 context_id,
-                 base_cont: str,
-                 alt_cont: str,
-                 monotonicity: str,
-                 insertions_base,
-                 insertions_alt,
-                 n_insertions,
+                 base_input_toks,
+                 alt_input_toks,
+                 base_res,
+                 alt_res,
                  multitoken=False,
                  device='cpu'):
         super()
         self.device = device
         self.multitoken = multitoken
-
-        if isinstance(tokenizer, BertTokenizer):
-            base_temp = base_temp + ' [MASK]'
-            alt_temp = alt_temp + ' [MASK]'
-
-        self.context_id = context_id
-        self.n_insertions = n_insertions
-
-        # All the initial strings
-        self.base_string = base_cont
-        self.alt_string = alt_cont
-
-        self.monotonicity = monotonicity
-        self.insertions_base = insertions_base
-        self.insertions_alt = insertions_alt
-
-        self.enc = tokenizer
-
-        if self.enc is not None:
-            self.base_string_tok = self.enc.encode(base_temp, add_special_tokens=False)
-            self.alt_string_tok = self.enc.encode(alt_temp, add_special_tokens=False)
-
-            self.base_string_tok = torch.LongTensor(self.base_string_tok).to(device)
-            self.alt_string_tok = torch.LongTensor(self.alt_string_tok).to(device)
-
+        self.base_input_toks = base_input_toks
+        self.alt_input_toks = alt_input_toks
+        self.base_res = base_res
+        self.alt_res = alt_res
 
     def set_results(self, res_base, res_alt):
         '''

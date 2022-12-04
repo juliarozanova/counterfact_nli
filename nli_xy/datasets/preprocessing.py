@@ -1,6 +1,7 @@
 import pandas as pd 
+import numpy as np
 import torch
-import pdb
+from loguru import logger
 
 # sentence pair -> context + x,y (tokens)
 
@@ -53,13 +54,16 @@ def set_of_insertions_into_context(context_row, insertions_df, tokenizer):
     '''
 
     raw_context = context_row.context
-    context = tokenizer.tokenize(raw_context)
+    try:
+        context = tokenizer.tokenize(raw_context)
+    except TypeError:
+        logger.exception(f'Context "{raw_context}" invalid for tokenization!')
 
     insertions_df = filter_insertions_by_grammar(context_row, insertions_df)
     try:
         assert not insertions_df.empty
     except AssertionError:
-        raise ValueError(f'''
+        logger.exception(f'''
                 No grammatically valid insertions for this context! Check data labels for
                 the context: \"{raw_context}\".''')
 

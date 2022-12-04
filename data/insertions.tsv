@@ -37,7 +37,6 @@ MoNLI	s	mare	horse	s	leq
 MoNLI	s	computer	machine	s	leq				
 MoNLI	s	PC	machine	s	leq				
 MoNLI	s	dog	hound	s	leq				
-MoNLI	s	hound	dog	s	leq				
 MoNLI	s	dog	animal	s	leq				
 MoNLI	s	house	building	s	leq				
 MoNLI	s	school	building	s	leq				
@@ -92,8 +91,6 @@ own	s	creature	vehicle	s	none
 own	s	pen	vehicle	s	none				
 own	s	building	vehicle	s	none				
 own	s	palace	building	s	leq				
-own	s	school	building	s	leq				
-own	s	library	building	s	leq				
 own	s	courthouse	building	s	leq				
 own	s	church	building	s	leq				
 own	s	cottage	building	s	leq				
