@@ -3,10 +3,10 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import math
 import statistics
+from loguru import logger
 from transformers import (
-    GPT2LMHeadModel, GPT2Tokenizer,
-    BertForMaskedLM, BertTokenizer,
-    AutoModelForCausalLM, GPTNeoForCausalLM
+    BertForSequenceClassification, RobertaForSequenceClassification,
+    AutoModelForSequenceClassification
 )
 
 
@@ -24,17 +24,16 @@ class Model():
         self.is_gpt2 = (model_version.startswith('gpt2') or model_version.startswith('distilgpt2'))
         self.is_gptj = model_version.startswith('EleutherAI/gpt-j')
         self.is_bert = model_version.startswith('bert')
+        self.is_roberta = model_version.startswith('roberta')
         self.is_gptneo = model_version.startswith('EleutherAI/gpt-neo')
         self.is_gpt3 = model_version.startswith('gpt3')
-        assert (self.is_gpt2 or self.is_bert or self.is_gptj or self.is_gptneo)
+        # assert (self.is_gpt2 or self.is_bert or self.is_roberta or self.is_gptj or self.is_gptneo)
 
         self.device = device
 
-        model_class = (GPT2LMHeadModel if self.is_gpt2 else
-                  AutoModelForCausalLM if self.is_gptj else
-                  BertForMaskedLM if self.is_bert else
-                  GPTNeoForCausalLM if self.is_gptneo else
-                  None)
+        model_class = (BertForSequenceClassification if self.is_bert else
+                  RobertaForSequenceClassification if self.is_roberta else
+                  AutoModelForSequenceClassification)
 
         self.model = model_class.from_pretrained(
             model_version,
@@ -45,7 +44,7 @@ class Model():
         self.model.to(device)
 
         if random_weights:
-            print('Randomizing weights')
+            logger.info('Randomizing weights')
             self.model.init_weights()
 
 
@@ -66,9 +65,11 @@ class Model():
 
         word2intervention_results = {}
         for idx, intervention in enumerate(tqdm(interventions, desc='performing interventions')):
-            base_tok = intervention.base_string_tok.unsqueeze(0)
-            alt_tok = intervention.alt_string_tok.unsqueeze(0)
+            base_tok = intervention.base_input_toks.unsqueeze(0)
+            alt_tok = intervention.alt_input_toks.unsqueeze(0)
             word2intervention_results[idx] = self.intervention_full_ditribution_experiment(base_tok, alt_tok, multitoken=multitoken)
+            logger.info(f'{intervention.base_res}, {intervention.alt_res}')
+            logger.info(word2intervention_results[idx])
 
         return word2intervention_results
 
@@ -101,7 +102,8 @@ class Model():
     def get_distribution_for_examples(self, context):
         with torch.no_grad():
             logits = self.model(context.to(self.device))[0].to('cpu')
-            logits = logits[:, -1, :]
+            # logits = logits[:, -1, :]
+            # logits = logits[:, -1]
             probs = F.softmax(logits, dim=-1)
             # logits_subset = logits[:, self.vocab_subset].squeeze().tolist()
             # probs_subset = probs[:, self.vocab_subset].squeeze().tolist()

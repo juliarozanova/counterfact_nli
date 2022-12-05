@@ -23,6 +23,10 @@ class Intervention():
         self.base_res = base_res
         self.alt_res = alt_res
 
+        self.base_input_toks = torch.LongTensor(self.base_input_toks).to(device)
+        self.alt_input_toks = torch.LongTensor(self.alt_input_toks).to(device)
+
+
     def set_results(self, res_base, res_alt):
         '''
         Originally: tokenize the result number as a word

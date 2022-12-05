@@ -23,7 +23,7 @@ def construct_intervention_prompts(intervention_type, encode_config, args):
     # counterfactual_contexts_dataset = build_dataset(DATA_PATH, encode_config, tokenizer, counterfactual_contexts=True)
 
     if intervention_type == '0':
-        interventions = change_insertions_interventions_same_result(dataset, change_result=False)
+        interventions = change_insertions_interventions_same_result(dataset, tokenizer, change_result=False)
 
     # if intervention_type == "1":
     #     interventions = change_context_same_result(dataset, counterfactual_contexts_dataset)

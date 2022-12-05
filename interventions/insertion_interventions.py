@@ -5,11 +5,9 @@ from tqdm import tqdm
 import pandas as pd
 from loguru import logger
 
-def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, change_result=True) -> List[Intervention]:
+def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, tokenizer, change_result=True) -> List[Intervention]:
 	interventions = []
-	tokens_df = dataset.input_tokens_df
 	meta_df = dataset.meta_df.reset_index()
-
 	context_groups = meta_df.groupby(by='context')
 
 	for context_text, context_group in tqdm(context_groups):
@@ -21,7 +19,11 @@ def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, change_
 			# get row integer index value
 			row_id = insertion_subgroup.index.tolist()[0]
 
-			base_input_toks = tokens_df.iloc[row_id]
+			base_input_toks = tokenizer.encode(
+				meta_df.at[row_id, 'premise'],
+				meta_df.at[row_id, 'hypothesis'],
+			)
+
 			base_res = insertion_subgroup.at[row_id, 'gold_label']
 
 			# filter insertion groups by result
@@ -44,7 +46,10 @@ def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, change_
 					# get row integer index value
 					alt_row_id = alt_insertion_subgroup.index.tolist()[0]
 
-					alt_input_toks = tokens_df.iloc[alt_row_id]
+					alt_input_toks = tokenizer.encode(
+						meta_df.at[alt_row_id, 'premise'],
+						meta_df.at[alt_row_id, 'hypothesis'],
+					)
 					alt_res = alt_insertion_subgroup.at[alt_row_id, 'gold_label']
 
 					if change_result:
@@ -59,8 +64,9 @@ def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, change_
 						alt_res=alt_res
 					)
 
-					intervention.set_results
 					interventions.append(intervention)
+				break
+		break
 
 	return interventions
 
