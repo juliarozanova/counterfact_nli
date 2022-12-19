@@ -4,6 +4,7 @@ from tqdm import tqdm
 import math
 import statistics
 from loguru import logger
+from result_utils import InterventionResult
 from transformers import (
     BertForSequenceClassification, RobertaForSequenceClassification,
     AutoModelForSequenceClassification
@@ -14,6 +15,7 @@ class Model():
 
     def __init__(self,
                  device='cpu',
+                 model_name='',
                  output_attentions=False,
                  random_weights=False,
                  model_version='gpt2',
@@ -21,6 +23,7 @@ class Model():
 
         super()
 
+        self.model_name = model_name
         self.is_gpt2 = (model_version.startswith('gpt2') or model_version.startswith('distilgpt2'))
         self.is_gptj = model_version.startswith('EleutherAI/gpt-j')
         self.is_bert = model_version.startswith('bert')
@@ -61,30 +64,31 @@ class Model():
             raise Exception('Representation unknown: {}'.format(representation))
 
 
-    def intervention_experiment(self, interventions, multitoken=False):
+    def intervention_experiment(self, interventions):
 
-        word2intervention_results = {}
+        intervention_results = {}
         for idx, intervention in enumerate(tqdm(interventions, desc='performing interventions')):
-            base_tok = intervention.base_input_toks.unsqueeze(0)
-            alt_tok = intervention.alt_input_toks.unsqueeze(0)
-            word2intervention_results[idx] = self.intervention_full_ditribution_experiment(base_tok, alt_tok, multitoken=multitoken)
-            logger.info(f'{intervention.base_res}, {intervention.alt_res}')
-            logger.info(word2intervention_results[idx])
+            intervention_results[idx] = self.intervention_full_ditribution_experiment(intervention)
 
-        return word2intervention_results
+        return intervention_results
 
 
     # TODO make sure logits are coming from entailment prediction, not mask token or something
-    def intervention_full_ditribution_experiment(self, base_tok, alt_tok, multitoken=False):
-        if not multitoken:
-            logits_base, probs_base = self.get_distribution_for_examples(base_tok)
-            logits_alt, probs_alt = self.get_distribution_for_examples(alt_tok)
-        else:
-            logits_base, probs_base = self.get_distribution_multitoken(base_tok)
-            logits_alt, probs_alt = self.get_distribution_multitoken(alt_tok)
+    def intervention_full_ditribution_experiment(self, intervention):
+        base_tok = intervention.input_toks_base.unsqueeze(0)
+        alt_tok = intervention.input_toks_alt.unsqueeze(0)
+        logits_base, probs_base = self.get_distribution_for_examples(base_tok)
+        logits_alt, probs_alt = self.get_distribution_for_examples(alt_tok)
 
-        return logits_base, logits_alt, probs_base, probs_alt
-
+        return InterventionResult(intervention,
+                                    logits_base,
+                                    logits_alt,
+                                    probs_base,
+                                    probs_alt,
+                                    model_name=self.model_name
+                                    # pred_base,
+                                    # pred_alt
+                                    )
 
     def get_top_k_logprobs(self, context, k=100):
         with torch.no_grad():
@@ -105,6 +109,9 @@ class Model():
             # logits = logits[:, -1, :]
             # logits = logits[:, -1]
             probs = F.softmax(logits, dim=-1)
+
+            logits = logits.squeeze()
+            probs = probs.squeeze()
             # logits_subset = logits[:, self.vocab_subset].squeeze().tolist()
             # probs_subset = probs[:, self.vocab_subset].squeeze().tolist()
 

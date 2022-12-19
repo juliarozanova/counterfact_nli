@@ -13,6 +13,16 @@ from nli_xy.encoding import load_encoder_model, load_tokenizer, build_dataset
 from nli_xy.datasets import load_nli_data, convert_nlixy_to_nli
 from nli_xy.analysis.utils import accuracy_from_meta_df
 
+three_class_models = ['roberta-large-mnli', 
+    'facebook/bart-large-mnli', 
+    'facebook/bart-large-mnli-help', 
+    'roberta-large-mnli-double-finetuning',
+    'bert-base-uncased-snli-help',
+    'bert-base-uncased-snli',
+    'microsoft/deberta-large-mnli']
+
+two_class_models = ['roberta-large-mnli-help'] # check: bert-base-uncased-snli-help?
+
 @task 
 def eval_on_nli_datasets(encode_configs, EVAL_SETS_DIR=None, from_nli_xy_datasets=False):
     if not EVAL_SETS_DIR and not from_nli_xy_datasets:
@@ -46,7 +56,7 @@ def eval_on_nli_datasets(encode_configs, EVAL_SETS_DIR=None, from_nli_xy_dataset
                 encoder_model = load_encoder_model.run(encode_config)
                 nli_xy_dataset = build_dataset.run(NLI_XY_DIR, encode_config, tokenizer)
                 nli_dataset = convert_nlixy_to_nli.run(nli_xy_dataset)
-                meta_df = eval_on_nli_dataset.run(nli_dataset, 
+                meta_df = eval_on_nli_dataset(nli_dataset, 
                                                     encoder_model, 
                                                     rep_name,
                                                     batch_size)
@@ -122,15 +132,6 @@ def eval_on_nli_dataset(nli_dataset, encoder_model, encoder_model_name, batch_si
     meta_df['y_pred'] = y_pred
     meta_df['y_pred'] = meta_df['y_pred'].apply(int)
 
-    three_class_models = ['roberta-large-mnli', 
-        'facebook/bart-large-mnli', 
-        'facebook/bart-large-mnli-help', 
-        'facebook-bart-large-mnli', 
-        'facebook-bart-large-mnli-help', 
-        'roberta-large-mnli-double-finetuning',
-        'bert-base-uncased-snli-help',
-        'bert-base-uncased-snli',
-        'microsoft/deberta-large-mnli']
 
     if encoder_model_name in three_class_models:
         meta_df['y_pred'] = meta_df['y_pred'].apply(relabel_three_class_predictions)

@@ -5,7 +5,7 @@ from tqdm import tqdm
 import pandas as pd
 from loguru import logger
 
-def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, tokenizer, change_result=True) -> List[Intervention]:
+def change_insertions_interventions(dataset: NLI_XY_Dataset, tokenizer, change_result=True) -> List[Intervention]:
 	interventions = []
 	meta_df = dataset.meta_df.reset_index()
 	context_groups = meta_df.groupby(by='context')
@@ -13,60 +13,148 @@ def change_insertions_interventions_same_result(dataset: NLI_XY_Dataset, tokeniz
 	for context_text, context_group in tqdm(context_groups):
 		insertion_groups = context_group.groupby(by='insertion_pair')
 
-		for insertion_pair, insertion_subgroup in insertion_groups:
+		for insertion_pair_base, insertion_subgroup in insertion_groups:
+			# Build base example
 			insertion_subgroup = ensure_one_row(insertion_subgroup)
 
-			# get row integer index value
-			row_id = insertion_subgroup.index.tolist()[0]
+			# get row integer index value for base example
+			row_id_base = insertion_subgroup.index.tolist()[0]
 
-			base_input_toks = tokenizer.encode(
-				meta_df.at[row_id, 'premise'],
-				meta_df.at[row_id, 'hypothesis'],
+			premise_base = meta_df.at[row_id_base, 'premise']
+			hypothesis_base = meta_df.at[row_id_base, 'hypothesis']
+
+			input_toks_base = tokenizer.encode(
+				premise_base,
+				hypothesis_base
 			)
 
-			base_res = insertion_subgroup.at[row_id, 'gold_label']
+			res_base_string = insertion_subgroup.at[row_id_base, 'gold_label']
 
 			# filter insertion groups by result
-
 			if change_result:
-				filtered_insertion_groups = context_group.loc[context_group.gold_label!=base_res]
-				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label!=base_res)
-			else: 
-				filtered_insertion_groups = context_group.loc[context_group.gold_label==base_res]
+				filtered_insertion_groups = context_group.loc[context_group.gold_label!=res_base_string]
+				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label!=res_base)
+			elif not change_result: 
+				filtered_insertion_groups = context_group.loc[context_group.gold_label==res_base_string]
 				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label==base_res)
 			
 			filtered_insertion_groups = filtered_insertion_groups.groupby(by='insertion_pair')
 
-			for alt_insertion_pair, alt_insertion_subgroup in filtered_insertion_groups:
-				if alt_insertion_pair == insertion_pair:
+			for insertion_pair_alt, insertion_subgroup_alt in filtered_insertion_groups:
+				if insertion_pair_alt == insertion_pair_base:
 					pass
 				else:
-					alt_insertion_subgroup = ensure_one_row(alt_insertion_subgroup)
+					insertion_subgroup_alt = ensure_one_row(insertion_subgroup_alt)
 
 					# get row integer index value
-					alt_row_id = alt_insertion_subgroup.index.tolist()[0]
+					row_id_alt = insertion_subgroup_alt.index.tolist()[0]
+					premise_alt = meta_df.at[row_id_alt, 'premise']
+					hypothesis_alt = meta_df.at[row_id_alt, 'hypothesis']
 
-					alt_input_toks = tokenizer.encode(
-						meta_df.at[alt_row_id, 'premise'],
-						meta_df.at[alt_row_id, 'hypothesis'],
+
+					input_toks_alt = tokenizer.encode(
+						premise_alt,
+						hypothesis_alt,
 					)
-					alt_res = alt_insertion_subgroup.at[alt_row_id, 'gold_label']
+					res_alt_string = insertion_subgroup_alt.at[row_id_alt, 'gold_label']
 
 					if change_result:
-						assert alt_res!=base_res
+						assert res_alt_string!=res_base_string
 					elif not change_result:
-						assert alt_res==base_res
+						assert res_alt_string==res_base_string
 
 					intervention = Intervention(
-						base_input_toks=base_input_toks,
-						alt_input_toks=alt_input_toks,
-						base_res=base_res,
-						alt_res=alt_res
+						input_toks_base=input_toks_base,
+						input_toks_alt=input_toks_alt,
+						res_base_string=res_base_string,
+						res_alt_string=res_alt_string,
+						premise_base = premise_base,
+						hypothesis_base = hypothesis_base,
+						premise_alt = premise_alt,
+						hypothesis_alt = hypothesis_alt
+						# context_base = ,
 					)
 
 					interventions.append(intervention)
-				break
-		break
+			break
+
+	return interventions
+
+def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_result=True) -> List[Intervention]:
+	interventions = []
+	meta_df = dataset.meta_df.reset_index()
+	insertion_groups = meta_df.groupby(by='insertion_pair')
+
+	for insertion_pair, insertion_group in tqdm(insertion_groups):
+
+		context_groups = insertion_group.groupby(by='context')
+
+		# iterate over single rows 
+		for context_base, context_subgroup in context_groups:
+			# Fix a base example
+			context_subgroup = ensure_one_row(context_subgroup)
+
+			# get row integer index value for base example
+			row_id_base = context_subgroup.index.tolist()[0]
+
+			premise_base = meta_df.at[row_id_base, 'premise']
+			hypothesis_base = meta_df.at[row_id_base, 'hypothesis']
+
+			input_toks_base = tokenizer.encode(
+				premise_base,
+				hypothesis_base
+			)
+
+			res_base_string = context_subgroup.at[row_id_base, 'gold_label']
+
+			# get all rows for this insertion that have same/different gold label
+
+			if change_result:
+				filtered_context_group = insertion_group.loc[insertion_group.gold_label!=res_base_string]
+				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label!=res_base)
+			elif not change_result: 
+				filtered_context_group = insertion_group.loc[insertion_group.gold_label==res_base_string]
+				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label==base_res)
+
+			filtered_context_groups = filtered_context_group.groupby(by='context')
+
+			for context_alt, context_subgroup_alt in filtered_context_groups:
+				if context_alt == context_base:
+					pass
+				else:
+					context_subgroup_alt = ensure_one_row(context_subgroup_alt)
+
+					# get row integer index value
+					row_id_alt = context_subgroup_alt.index.tolist()[0]
+					premise_alt = meta_df.at[row_id_alt, 'premise']
+					hypothesis_alt = meta_df.at[row_id_alt, 'hypothesis']
+
+
+					input_toks_alt = tokenizer.encode(
+						premise_alt,
+						hypothesis_alt,
+					)
+					res_alt_string = context_subgroup_alt.at[row_id_alt, 'gold_label']
+
+					if change_result:
+						assert res_alt_string!=res_base_string
+					elif not change_result:
+						assert res_alt_string==res_base_string
+
+					intervention = Intervention(
+						input_toks_base=input_toks_base,
+						input_toks_alt=input_toks_alt,
+						res_base_string=res_base_string,
+						res_alt_string=res_alt_string,
+						premise_base = premise_base,
+						hypothesis_base = hypothesis_base,
+						premise_alt = premise_alt,
+						hypothesis_alt = hypothesis_alt
+						# context_base = ,
+					)
+
+					interventions.append(intervention)
+			break
 
 	return interventions
 

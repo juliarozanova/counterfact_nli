@@ -1,15 +1,14 @@
 import random
 import os
-# from interventions.context_interventions import change_context_same_result
-from interventions.insertion_interventions import change_insertions_interventions_same_result
+from interventions.insertion_interventions import change_insertions_interventions, change_context_interventions
 from nli_xy.encoding import build_dataset, parse_encode_config, load_tokenizer
+from loguru import logger
 import torch
-from experiments.constants import ENCODE_CONFIG_FILE, DATA_PATH
+from experiments.constants import DATA_PATH
 
 # INTERVENTION_TYPES_TWO_RESULTS = ['0', '1', '1b', '1c', '4']
 # INTERVENTION_TYPES_SINGLE_RESULT = ['2', '3', '10', '11']
 # INTERVENTION_TYPES = ['change_insertions', 'change_context_same_result', 'change_context_different_result']
-INTERVENTION_TYPES = ['0', '1', '2']
 
 def construct_intervention_prompts(intervention_type, encode_config, args):
     '''
@@ -20,16 +19,20 @@ def construct_intervention_prompts(intervention_type, encode_config, args):
     tokenizer = load_tokenizer(encode_config)
 
     dataset = build_dataset(DATA_PATH, encode_config, tokenizer)
-    # counterfactual_contexts_dataset = build_dataset(DATA_PATH, encode_config, tokenizer, counterfactual_contexts=True)
 
     if intervention_type == '0':
-        interventions = change_insertions_interventions_same_result(dataset, tokenizer, change_result=False)
-
-    # if intervention_type == "1":
-    #     interventions = change_context_same_result(dataset, counterfactual_contexts_dataset)
-    #     pass
-    # if intervention_type =="2":
-    #     interventions = change_context_different_result(dataset, counterfactual_contexts_dataset)
+        logger.info('Performing intervention: change insertion, same result')
+        interventions = change_insertions_interventions(dataset, tokenizer, change_result=False)
+    if intervention_type == '1':
+        logger.info('Performing intervention: change insertion, change result')
+        interventions = change_insertions_interventions(dataset, tokenizer, change_result=True)
+    if intervention_type == '2':
+        logger.info('Performing intervention: change context, same result')
+        interventions = change_context_interventions(dataset, tokenizer, change_result=False)
+    if intervention_type == '3':
+        logger.info('Performing intervention: change context, change result')
+        interventions = change_context_interventions(dataset, tokenizer, change_result=True)
     # else:
-    #     raise Exception('intervention_type not defined {}'.format(intervention_type))
+    #     raise Exception(f'intervention_type not defined {intervention_type}')
+
     return interventions

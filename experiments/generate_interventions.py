@@ -1,9 +1,11 @@
 from nli_xy.encoding import parse_encode_config
 from interventions.intervention import construct_intervention_prompts
 from intervention_models.intervention_model import Model
-from result_utils import compute_aggregate_metrics, process_intervention_results, process_intervention_results_gpt3, compute_aggregate_metrics_for_col
-from experiments.constants import ENCODE_CONFIG_FILE, DATA_PATH
+from result_utils import compute_aggregate_metrics, process_intervention_results
+from experiments.constants import ENCODE_CONFIG_FILE
 from loguru import logger
+import pandas as pd
+import os
 import json
 import argparse
 
@@ -16,26 +18,36 @@ if __name__=="__main__":
     PARAMETERS = {
         'seed' : 2,  # to allow consistent sampling
     }
-    intervention_type = '0'
+    intervention_types = ['0', '1', '2', '3']
+
+    RESULTS_DIR='experiments/results/'
 
     args = argparse.Namespace(**PARAMETERS)
 
     encode_configs = parse_encode_config(ENCODE_CONFIG_FILE)
     # change representations to model_name?
-    for rep_name, encode_config in encode_configs["representations"].items():
-        interventions = construct_intervention_prompts(intervention_type, encode_config, args)
+    for intervention_type in intervention_types:
+        for rep_name, encode_config in encode_configs["representations"].items():
+            logger.info(f'Performing interventions for the model {rep_name}:')
+            interventions = construct_intervention_prompts(intervention_type, encode_config, args)
 
-        model = Model(
-            device=encode_config['device'],
-            model_version=encode_config['encoder_model']
-        )
-        intervention_results = model.intervention_experiment(interventions)
+            model = Model(
+                device=encode_config['device'],
+                model_name=rep_name,
+                model_version=encode_config['encoder_model'],
+            )
 
-        results_df = process_intervention_results(interventions, intervention_results, args.max_n, args.representation, single_result=single_result)
-        metrics_dict = compute_aggregate_metrics(results_df, single_result=False)
+            intervention_results = model.intervention_experiment(interventions)
 
-        print(json.dumps(metrics_dict, indent=4))
-        # metrics_dict = { 'int{}_'.format(itype) + k 
+            results_df = process_intervention_results(interventions, intervention_results, representation=rep_name)
+            metrics_dict = compute_aggregate_metrics(results_df, single_result=False)
 
+            INTERVENTION_RESULTS_DIR = os.path.join(RESULTS_DIR, f'intervention_{intervention_type}/{rep_name}/')
+            if not os.path.exists(INTERVENTION_RESULTS_DIR):
+                os.makedirs(INTERVENTION_RESULTS_DIR)
 
-        break
+            with open(os.path.join(INTERVENTION_RESULTS_DIR, f'meta.tsv'), 'w+') as file:
+                file.write(results_df.to_csv(sep='\t', index=False))
+
+            with open(os.path.join(INTERVENTION_RESULTS_DIR, f'summary_results.tsv'), 'w+') as file:
+                file.write(pd.DataFrame(metrics_dict).to_csv(sep='\t'))

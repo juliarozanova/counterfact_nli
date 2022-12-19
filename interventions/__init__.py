@@ -1,6 +1,7 @@
 #TODO Ensure intervention class doesn't rely on base_tok etc being mask tokens?
 
 import torch
+from nli_xy.analysis.eval_on_nli_task import three_class_models, two_class_models
 from transformers import GPT2Tokenizer, BertTokenizer
 
 
@@ -9,47 +10,53 @@ class Intervention():
     Wrapper for all the possible interventions
     '''
     def __init__(self,
-                 base_input_toks,
-                 alt_input_toks,
-                 base_res,
-                 alt_res,
-                 multitoken=False,
+                 input_toks_base,
+                 input_toks_alt,
+                 res_base_string,
+                 res_alt_string,
+                 premise_base,
+                 hypothesis_base,
+                 premise_alt,
+                 hypothesis_alt,
                  device='cpu'):
+        ''' Stores metadata for two entailment examples which jointly constitute an "intervention".
+
+        Parameters
+        ----------
+        input_toks_base : _type_
+            _description_
+        input_toks_alt : _type_
+            _description_
+        res_base_string : _type_
+            _description_
+        res_alt_string : _type_
+            _description_
+        premise_base : _type_
+            _description_
+        hypothesis_base : _type_
+            _description_
+        premise_alt : _type_
+            _description_
+        hypothesis_alt : _type_
+            _description_
+        device : str, optional
+            _description_, by default 'cpu'
+
+        Raises
+        ------
+        ValueError
+            _description_
+        '''
         super()
         self.device = device
-        self.multitoken = multitoken
-        self.base_input_toks = base_input_toks
-        self.alt_input_toks = alt_input_toks
-        self.base_res = base_res
-        self.alt_res = alt_res
+        self.input_toks_base = input_toks_base
+        self.input_toks_alt = input_toks_alt
+        self.res_base_string = res_base_string
+        self.res_alt_string = res_alt_string
+        self.premise_base = premise_base,
+        self.hypothesis_base = hypothesis_base
+        self.premise_alt = premise_alt,
+        self.hypothesis_alt = hypothesis_alt
 
-        self.base_input_toks = torch.LongTensor(self.base_input_toks).to(device)
-        self.alt_input_toks = torch.LongTensor(self.alt_input_toks).to(device)
-
-
-    def set_results(self, res_base, res_alt):
-        '''
-        Originally: tokenize the result number as a word
-        '''
-        self.res_base_string  = res_base
-        self.res_alt_string = res_alt
-
-        if self.enc is not None:
-            # 'a ' added to input so that tokenizer understands that first word
-            # follows a space.
-            self.res_base_tok = self.enc.tokenize('a ' + res_base)[1:]
-            self.res_alt_tok = self.enc.tokenize('a ' + res_alt)[1:]
-            if not self.multitoken:
-                assert len(self.res_base_tok) == 1, '{} - {}'.format(self.res_base_tok, res_base)
-                assert len(self.res_alt_tok) == 1, '{} - {}'.format(self.res_alt_tok, res_alt)
-
-            self.res_base_tok = self.enc.convert_tokens_to_ids(self.res_base_tok)
-            self.res_alt_tok = self.enc.convert_tokens_to_ids(self.res_alt_tok)
-
-    def set_result(self, res):
-        self.res_string = res
-
-        if self.enc is not None:
-            self.res_tok = self.enc.tokenize('a ' + res)[1:]
-            if not self.multitoken:
-                assert (len(self.res_tok) == 1)
+        self.input_toks_base = torch.LongTensor(self.input_toks_base).to(device)
+        self.input_toks_alt = torch.LongTensor(self.input_toks_alt).to(device)

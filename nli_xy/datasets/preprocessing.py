@@ -25,7 +25,6 @@ def instantiate(sent_tokens, np_tokens, variable='x'):
         #else:
             #raise ValueError(f'Variable token {variable} not among sentence tokens!')
 
-
     full_sent_tokens = sent_tokens[:var_index] + np_tokens + sent_tokens[var_index+1:]
     inserted_end = var_index + len(np_tokens)
     inserted_start = var_index

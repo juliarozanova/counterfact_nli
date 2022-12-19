@@ -1,6 +1,6 @@
 
 DATA_PATH = "data/"
-ENCODE_CONFIG_FILE = 'data/encode_configs.json'
+ENCODE_CONFIG_FILE = 'data/full_encode_configs.json'
 
 # DIR_PATH = os.getcwd()
 
