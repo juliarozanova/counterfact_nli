@@ -122,21 +122,12 @@ def process_intervention_results(interventions, intervention_results, representa
         # Causal effect
         pred_base = normalized_base.argmax()
         pred_alt = normalized_alt.argmax()
-        # TODO: do we want to do this with pred (in 3-sapce) or with y_pred (in 2-space)?
+
+        y_pred_base = interpret_prediction_label(pred_base, intervention_result.model_name)
+        y_pred_alt = interpret_prediction_label(pred_alt, intervention_result.model_name)
+
         causal_effect = np.abs(pred_base - pred_alt)
-
-        if intervention_result.model_name in three_class_models:
-            y_pred_base = relabel_three_class_predictions(pred_base)
-            y_pred_alt = relabel_three_class_predictions(pred_alt)
-
-        elif intervention_result.model_name in two_class_models:
-            y_pred_base = pred_base
-            y_pred_alt = pred_alt
-            try:
-                assert y_pred_base not in [2,'2']
-            except AssertionError:
-                logger.warning(f'Are you sure {intervention_result.model_name} is a two class model? It is predicting class {pred_base} and {pred_alt}!')
-
+        two_class_causal_effect = np.abs(y_pred_base - y_pred_alt)
 
         res_base = intervention_result.res_base
         res_alt = intervention_result.res_alt
@@ -172,7 +163,8 @@ def process_intervention_results(interventions, intervention_results, representa
             'js_div': js_div,
             'tv_norm': tv_norm,
             'l_inf_div': l_inf_div,
-            'causal_effect': causal_effect
+            'causal_effect': causal_effect,
+            'two_class_causal_effect': two_class_causal_effect
         }
 
 
@@ -225,3 +217,27 @@ def compute_aggregate_metrics(df, single_result):
         metrics_dict[measure] = metric_dict
 
     return metrics_dict
+
+def interpret_prediction_label(pred, model_name):
+    '''
+    Transform prediction labels to the same space where:
+        entailment := 1 
+        non-entailment := 0
+
+    Parameters
+    ----------
+    pred : int
+        Model's prediction after argmax. For 3 class models, pred is in {0,1,2}.
+    model_name : str
+        Name of model (e.g. 'roberta-large-mnli')     
+    '''
+    if model_name in three_class_models:
+        y_pred = relabel_three_class_predictions(pred)
+
+    elif model_name in two_class_models:
+        y_pred = pred
+        try:
+            assert y_pred not in [2,'2']
+        except AssertionError:
+            logger.warning(f'Are you sure {model_name} is a two class model? It is predicting class {pred}!')
+    return y_pred

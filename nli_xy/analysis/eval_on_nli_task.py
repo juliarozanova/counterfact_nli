@@ -140,7 +140,6 @@ def eval_on_nli_dataset(nli_dataset, encoder_model, encoder_model_name, batch_si
     meta_df['correct'] = (meta_df['y_true']==meta_df['y_pred']).apply(int)
     return meta_df
 
-
 def relabel_three_class_predictions(three_class_label):
     if three_class_label in ['2', 2]:
         # entailment in three classes maps to entailment in two classes

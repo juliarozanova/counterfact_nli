@@ -19,7 +19,6 @@ if __name__=="__main__":
         'seed' : 2,  # to allow consistent sampling
     }
     intervention_types = ['0', '1', '2', '3']
-
     RESULTS_DIR='experiments/results/'
 
     args = argparse.Namespace(**PARAMETERS)

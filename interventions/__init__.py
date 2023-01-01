@@ -53,9 +53,9 @@ class Intervention():
         self.input_toks_alt = input_toks_alt
         self.res_base_string = res_base_string
         self.res_alt_string = res_alt_string
-        self.premise_base = premise_base,
+        self.premise_base = premise_base
         self.hypothesis_base = hypothesis_base
-        self.premise_alt = premise_alt,
+        self.premise_alt = premise_alt
         self.hypothesis_alt = hypothesis_alt
 
         self.input_toks_base = torch.LongTensor(self.input_toks_base).to(device)

@@ -80,7 +80,7 @@ def change_insertions_interventions(dataset: NLI_XY_Dataset, tokenizer, change_r
 
 	return interventions
 
-def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_result=True) -> List[Intervention]:
+def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_monotonicity=True, change_result=True) -> List[Intervention]:
 	interventions = []
 	meta_df = dataset.meta_df.reset_index()
 	insertion_groups = meta_df.groupby(by='insertion_pair')
@@ -96,6 +96,7 @@ def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_resu
 
 			# get row integer index value for base example
 			row_id_base = context_subgroup.index.tolist()[0]
+			context_monotonicity_base = context_subgroup.at[row_id_base, 'context_monotonicity']
 
 			premise_base = meta_df.at[row_id_base, 'premise']
 			hypothesis_base = meta_df.at[row_id_base, 'hypothesis']
@@ -110,11 +111,19 @@ def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_resu
 			# get all rows for this insertion that have same/different gold label
 
 			if change_result:
-				filtered_context_group = insertion_group.loc[insertion_group.gold_label!=res_base_string]
-				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label!=res_base)
-			elif not change_result: 
+				filtered_context_group = insertion_group.loc[insertion_group.gold_label!=res_base_string ]
+			elif not change_result and not change_monotonicity: 
 				filtered_context_group = insertion_group.loc[insertion_group.gold_label==res_base_string]
-				# filtered_insertion_groups = insertion_groups.filter(lambda x: x.gold_label==base_res)
+			else:
+				raise ValueError('Unexpected intervention configuration, Stopping')
+
+			if change_monotonicity:
+				filtered_context_group=filtered_context_group.loc[filtered_context_group.context_monotonicity!=context_monotonicity_base]
+			elif not change_monotonicity:
+				filtered_context_group=filtered_context_group.loc[filtered_context_group.context_monotonicity==context_monotonicity_base]
+			else:
+				raise ValueError('Unexpected intervention configuration, Stopping')
+
 
 			filtered_context_groups = filtered_context_group.groupby(by='context')
 
@@ -126,9 +135,9 @@ def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_resu
 
 					# get row integer index value
 					row_id_alt = context_subgroup_alt.index.tolist()[0]
+					context_monotonicity_alt = context_subgroup_alt.at[row_id_alt, 'context_monotonicity']
 					premise_alt = meta_df.at[row_id_alt, 'premise']
 					hypothesis_alt = meta_df.at[row_id_alt, 'hypothesis']
-
 
 					input_toks_alt = tokenizer.encode(
 						premise_alt,
@@ -136,6 +145,10 @@ def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_resu
 					)
 					res_alt_string = context_subgroup_alt.at[row_id_alt, 'gold_label']
 
+					if change_monotonicity:
+						assert context_monotonicity_alt!=context_monotonicity_base
+					if not change_monotonicity:
+						assert context_monotonicity_alt==context_monotonicity_base
 					if change_result:
 						assert res_alt_string!=res_base_string
 					elif not change_result:
