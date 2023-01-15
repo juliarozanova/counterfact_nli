@@ -1,7 +1,6 @@
 import pandas as pd 
-import numpy as np
 import torch
-from loguru import logger
+import pdb
 
 # sentence pair -> context + x,y (tokens)
 
@@ -24,6 +23,7 @@ def instantiate(sent_tokens, np_tokens, variable='x'):
         var_index = sent_tokens.index('Ġ'+variable)
         #else:
             #raise ValueError(f'Variable token {variable} not among sentence tokens!')
+
 
     full_sent_tokens = sent_tokens[:var_index] + np_tokens + sent_tokens[var_index+1:]
     inserted_end = var_index + len(np_tokens)
@@ -53,16 +53,13 @@ def set_of_insertions_into_context(context_row, insertions_df, tokenizer):
     '''
 
     raw_context = context_row.context
-    try:
-        context = tokenizer.tokenize(raw_context)
-    except TypeError:
-        logger.exception(f'Context "{raw_context}" invalid for tokenization!')
+    context = tokenizer.tokenize(raw_context)
 
     insertions_df = filter_insertions_by_grammar(context_row, insertions_df)
     try:
         assert not insertions_df.empty
     except AssertionError:
-        logger.exception(f'''
+        raise ValueError(f'''
                 No grammatically valid insertions for this context! Check data labels for
                 the context: \"{raw_context}\".''')
 

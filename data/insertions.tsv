@@ -22,7 +22,7 @@ MoNLI	s	plant	tree	s	leq
 MoNLI	s	ash	tree	s	leq				
 MoNLI	s	pine	tree	s	leq				
 MoNLI	s	oak	tree	s	leq				
-MoNLI	s	person	man	s	leq				
+MoNLI	s	man	person	s	leq				
 MoNLI	m	bass	fish	m	leq				
 MoNLI	s	man	adult	s	leq				
 MoNLI	s	gent	man	s	leq				

@@ -3,8 +3,9 @@
         "data_dir": "./data/nli_xy_small/all/",
         "save_dir": "./experiments/nli/eval_on_challenge_sets/",
         "task_label": "nli",
-        "batch_size": 32,
-        "max_length": 100,
+        "batch_size": 64,
+        "context_option": "all",
+        "max_length": 200,
         "device": "cuda"
     }, 
     "representations": {

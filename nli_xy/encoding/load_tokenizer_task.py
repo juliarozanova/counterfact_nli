@@ -1,3 +1,4 @@
+from prefect import task
 from transformers import AutoTokenizer
 
 def load_tokenizer(config):

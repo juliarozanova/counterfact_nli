@@ -1,4 +1,4 @@
-from nli_xy.analysis.eval_on_nli_task import relabel_three_class_predictions, three_class_models, two_class_models
+from nli_xy.analysis.eval_on_nli_task import interpret_predicted_label, two_class_models, three_class_models_2_is_entailment, three_class_models_0_is_entailment
 from interventions import Intervention
 import pandas as pd
 import numpy as np
@@ -54,10 +54,10 @@ class InterventionResult():
         self.res_alt_string = intervention.res_alt_string
 
 
-        self.interpret_gold_labels_as_ints()
+        self.interpret_gold_labels_as_expected_ints()
 
 
-    def interpret_gold_labels_as_ints(self):
+    def interpret_gold_labels_as_expected_ints(self):
         '''
             Creates two values, the "res" (gold expected result, which is dependent on the shape of model outputs
                 and maps the gold label to the relevant model output label)
@@ -74,7 +74,8 @@ class InterventionResult():
         # TODO Alternatively: consider the union probability of classes 0 and 1 as a new normalized output?
         #   then we would not need to destinguish between "res" and "y_true"
 
-        if self.model_name in three_class_models:
+        # res should be the model-specific indicator of the corresponding logits/proba output column expected by the gold_label
+        if self.model_name in three_class_models_2_is_entailment:
             if self.res_base_string == 'entailment':
                 self.res_base = 2
             if self.res_base_string == 'non-entailment':
@@ -83,27 +84,40 @@ class InterventionResult():
                 self.res_alt = 2
             if self.res_alt_string == 'non-entailment':
                 self.res_alt = 1
+        
+        if self.model_name in three_class_models_0_is_entailment:
+            if self.res_base_string == 'entailment':
+                self.res_base = 0
+            if self.res_base_string == 'non-entailment':
+                self.res_base = 1
+            if self.res_alt_string == 'entailment':
+                self.res_alt = 0
+            if self.res_alt_string == 'non-entailment':
+                self.res_alt = 1
+
         elif self.model_name in two_class_models: 
             if self.res_base_string == 'entailment':
-                self.res_base = 1 
+                self.res_base = 0 
             if self.res_base_string == 'non-entailment':
-                self.res_base = 0
+                self.res_base = 1
             if self.res_alt_string == 'entailment':
-                self.res_alt = 1
-            if self.res_alt_string == 'non-entailment':
                 self.res_alt = 0
+            if self.res_alt_string == 'non-entailment':
+                self.res_alt = 1
         else:
             # todo: command line 
             raise ValueError(f'Model name {self.model_name} not recognised. Is it two or three class entailment model?')
 
+        
+        # Y_True is the final 2-space ture label: 0 for entailment, 1 for non-entailment
         if self.res_base_string == 'entailment':
-            self.y_true_base = 1
-        if self.res_base_string == 'non-entailment':
             self.y_true_base = 0
+        if self.res_base_string == 'non-entailment':
+            self.y_true_base = 1
         if self.res_alt_string == 'entailment':
-            self.y_true_alt = 1
-        if self.res_alt_string == 'non-entailment':
             self.y_true_alt = 0
+        if self.res_alt_string == 'non-entailment':
+            self.y_true_alt = 1
 
 
 def process_intervention_results(interventions, intervention_results, representation):
@@ -123,11 +137,13 @@ def process_intervention_results(interventions, intervention_results, representa
         pred_base = normalized_base.argmax()
         pred_alt = normalized_alt.argmax()
 
-        y_pred_base = interpret_prediction_label(pred_base, intervention_result.model_name)
-        y_pred_alt = interpret_prediction_label(pred_alt, intervention_result.model_name)
+        y_pred_base = interpret_predicted_label(pred_base, intervention_result.model_name)
+        y_pred_alt = interpret_predicted_label(pred_alt, intervention_result.model_name)
 
         causal_effect = np.abs(pred_base - pred_alt)
         two_class_causal_effect = np.abs(y_pred_base - y_pred_alt)
+        actual_causal_effect = (1 if pred_base != pred_alt else 0)
+        actual_two_class_causal_effect = (1 if y_pred_base != y_pred_alt else 0)
 
         res_base = intervention_result.res_base
         res_alt = intervention_result.res_alt
@@ -164,7 +180,9 @@ def process_intervention_results(interventions, intervention_results, representa
             'tv_norm': tv_norm,
             'l_inf_div': l_inf_div,
             'causal_effect': causal_effect,
-            'two_class_causal_effect': two_class_causal_effect
+            'two_class_causal_effect': two_class_causal_effect,
+            'actual_causal_effect': actual_causal_effect,
+            'actual_two_class_causal_effect': actual_two_class_causal_effect
         }
 
 
@@ -208,7 +226,17 @@ def compute_aggregate_metrics_for_col(col):
 
 def compute_aggregate_metrics(df, single_result):
     metrics_dict = {}
-    measures = ['is_correct_base', 'is_correct_alt', 'causal_effect', 'js_div', 'tv_norm', 'error_change', 'confidence_change', 'abs_confidence_change']
+    measures = ['is_correct_base',
+     'is_correct_alt',
+    'causal_effect',
+    'two_class_causal_effect',
+    'actual_causal_effect',
+    'actual_two_class_causal_effect',
+    'js_div',
+    'tv_norm',
+    'error_change', 
+    'confidence_change', 
+    'abs_confidence_change']
     if not single_result:
         measures = measures + ['relative_confidence_change']
 
@@ -218,26 +246,4 @@ def compute_aggregate_metrics(df, single_result):
 
     return metrics_dict
 
-def interpret_prediction_label(pred, model_name):
-    '''
-    Transform prediction labels to the same space where:
-        entailment := 1 
-        non-entailment := 0
-
-    Parameters
-    ----------
-    pred : int
-        Model's prediction after argmax. For 3 class models, pred is in {0,1,2}.
-    model_name : str
-        Name of model (e.g. 'roberta-large-mnli')     
-    '''
-    if model_name in three_class_models:
-        y_pred = relabel_three_class_predictions(pred)
-
-    elif model_name in two_class_models:
-        y_pred = pred
-        try:
-            assert y_pred not in [2,'2']
-        except AssertionError:
-            logger.warning(f'Are you sure {model_name} is a two class model? It is predicting class {pred}!')
-    return y_pred
+# possibly redundant function, just use interpret_predicted_label which is imported

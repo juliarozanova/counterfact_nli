@@ -1,7 +1,6 @@
 #TODO Ensure intervention class doesn't rely on base_tok etc being mask tokens?
 
 import torch
-from nli_xy.analysis.eval_on_nli_task import three_class_models, two_class_models
 from transformers import GPT2Tokenizer, BertTokenizer
 
 

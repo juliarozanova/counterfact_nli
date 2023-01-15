@@ -22,19 +22,19 @@ def construct_intervention_prompts(intervention_type, encode_config, args):
 
     if intervention_type == '0':
         # DCE (Same ground truth)
-        logger.info('Performing intervention: change insertion, same result')
+        logger.info('Constructing input intervention: change insertion, same result')
         interventions = change_insertions_interventions(dataset, tokenizer, change_result=False)
     if intervention_type == '1':
         # TCE (Not constant ground truth )
-        logger.info('Performing intervention: change insertion, change result')
+        logger.info('Constructing input intervention: change insertion, change result')
         interventions = change_insertions_interventions(dataset, tokenizer, change_result=True)
     if intervention_type == '2':
         # DSE (S -> R)
-        logger.info('Performing intervention: change context (same monotonicity), same result')
+        logger.info('Constructing input intervention: change context (same monotonicity), same result')
         interventions = change_context_interventions(dataset, tokenizer, change_monotonicity=False, change_result=False)
     if intervention_type == '3':
         #TCE (T->R)
-        logger.info('Performing intervention: change context AND monotonicity, change result')
+        logger.info('Constructing input intervention: change context AND monotonicity, change result')
         interventions = change_context_interventions(dataset, tokenizer, change_monotonicity=True, change_result=True)
     # TODO: An estimated DCE (O -> R) with minimal template edits?
     # if intervention_type == '4':

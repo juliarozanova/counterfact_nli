@@ -16,7 +16,7 @@ class NLI_2label_Dataset(Dataset):
         self.tokenizer = tokenizer
         self.device = device
         self.max_length = self.calculate_max_length()
-        self.df['y_true'] = self.df.gold_label.apply(relabel)
+        # self.df['y_true'] = self.df.gold_label.apply(relabel)
 
     def __len__(self):
         return len(self.df)
@@ -47,27 +47,29 @@ class NLI_2label_Dataset(Dataset):
 
         input_ids = torch.tensor(outputs['input_ids']).to(self.device)
         attention_mask = torch.tensor(outputs['attention_mask']).to(self.device)
-        label = torch.tensor(row['y_true']).to(self.device)
+        # label = torch.tensor(row['y_true']).to(self.device)
         
         return {
                 'input_ids': input_ids,
                 'attention_mask': attention_mask,
-                'label': label
                 }
 
-def relabel(label):
-    entailment_labels = ['ENTAILMENT', 'entailment', 'True', True]
-    non_entailment_labels = ['CONTRADICTION', 'NEUTRAL', 'neutral', 'contradiction',
-            'non-entailment', 'Non-Entailment', 'nonentailment', 'False', False]
-    if label in entailment_labels:
-        return 1
-    elif label in non_entailment_labels:
-        return 0
-    else:
-        raise ValueError(f'Unexpected entailment label! expected one of: {entailment_labels} \
-             or {non_entailment_labels}')
+# def relabel(label):
+#     entailment_labels = ['ENTAILMENT', 'entailment', 'True', True]
+#     non_entailment_labels = ['CONTRADICTION', 'NEUTRAL', 'neutral', 'contradiction',
+#             'non-entailment', 'Non-Entailment', 'nonentailment', 'False', False]
+#     if label in entailment_labels:
+#         return 1
+#     elif label in non_entailment_labels:
+#         return 0
+#     if label in entailment_labels:
+#         return 1
+#     elif label in non_entailment_labels:
+#         return 0
+#     else:
+#         raise ValueError(f'Unexpected entailment label! expected one of: {entailment_labels} \
+#              or {non_entailment_labels}')
 
-@task
 def load_nli_data(filepath, tokenizer, device='cuda'):
     if is_tsv(filepath):
         try:

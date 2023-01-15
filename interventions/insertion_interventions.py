@@ -3,17 +3,25 @@ from interventions import Intervention
 from typing import List
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
+import random
 from loguru import logger
 
-def change_insertions_interventions(dataset: NLI_XY_Dataset, tokenizer, change_result=True) -> List[Intervention]:
+def change_insertions_interventions(dataset: NLI_XY_Dataset, tokenizer, change_result=True, sample_size=20) -> List[Intervention]:
 	interventions = []
 	meta_df = dataset.meta_df.reset_index()
-	context_groups = meta_df.groupby(by='context')
+	context_groups = list(meta_df.groupby(by='context'))
+	random.shuffle(context_groups)
+	sampled_context_groups = context_groups[:sample_size]
+	# sample_groups = np.arange(context_groups.ngroups)
+	# np.random.shuffle()
 
-	for context_text, context_group in tqdm(context_groups):
-		insertion_groups = context_group.groupby(by='insertion_pair')
+	for context_text, context_group in tqdm(sampled_context_groups):
+		insertion_groups = list(context_group.groupby(by='insertion_pair'))
+		random.shuffle(insertion_groups)
+		sampled_insertion_groups = insertion_groups[:sample_size]
 
-		for insertion_pair_base, insertion_subgroup in insertion_groups:
+		for insertion_pair_base, insertion_subgroup in sampled_insertion_groups:
 			# Build base example
 			insertion_subgroup = ensure_one_row(insertion_subgroup)
 
@@ -76,21 +84,24 @@ def change_insertions_interventions(dataset: NLI_XY_Dataset, tokenizer, change_r
 					)
 
 					interventions.append(intervention)
-			break
 
 	return interventions
 
-def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_monotonicity=True, change_result=True) -> List[Intervention]:
+def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_monotonicity=True, change_result=True, sample_size=20) -> List[Intervention]:
 	interventions = []
 	meta_df = dataset.meta_df.reset_index()
-	insertion_groups = meta_df.groupby(by='insertion_pair')
 
-	for insertion_pair, insertion_group in tqdm(insertion_groups):
+	insertion_groups = list(meta_df.groupby(by='insertion_pair'))
+	random.shuffle(insertion_groups)
+	sampled_insertion_groups = insertion_groups[:sample_size]
 
-		context_groups = insertion_group.groupby(by='context')
+	for insertion_pair, insertion_group in tqdm(sampled_insertion_groups):
+		context_groups = list(insertion_group.groupby(by='context'))
+		random.shuffle(context_groups)
+		sampled_context_groups = context_groups[:sample_size]
 
 		# iterate over single rows 
-		for context_base, context_subgroup in context_groups:
+		for context_base, context_subgroup in sampled_context_groups:
 			# Fix a base example
 			context_subgroup = ensure_one_row(context_subgroup)
 
@@ -167,7 +178,6 @@ def change_context_interventions(dataset: NLI_XY_Dataset, tokenizer, change_mono
 					)
 
 					interventions.append(intervention)
-			break
 
 	return interventions
 

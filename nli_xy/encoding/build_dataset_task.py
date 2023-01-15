@@ -14,8 +14,8 @@ def build_split_datasets(DATA_DIR, config, tokenizer):
 
     return split_datasets
 
-def build_dataset(data_dir, config, tokenizer, counterfactual_contexts=False):
+def build_dataset(data_dir, config, tokenizer):
     dataset = NLI_XY_Dataset(config, tokenizer)
-    dataset.from_contexts(data_dir, counterfactual_contexts)
+    dataset.from_contexts(data_dir)
 
     return dataset
