@@ -11,8 +11,8 @@ class Intervention():
     def __init__(self,
                  input_toks_base,
                  input_toks_alt,
-                 res_base_string,
-                 res_alt_string,
+                 gold_label_base,
+                 gold_label_alt,
                  premise_base,
                  hypothesis_base,
                  premise_alt,
@@ -50,8 +50,8 @@ class Intervention():
         self.device = device
         self.input_toks_base = input_toks_base
         self.input_toks_alt = input_toks_alt
-        self.res_base_string = res_base_string
-        self.res_alt_string = res_alt_string
+        self.gold_label_base = gold_label_base
+        self.gold_label_alt = gold_label_alt
         self.premise_base = premise_base
         self.hypothesis_base = hypothesis_base
         self.premise_alt = premise_alt

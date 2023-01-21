@@ -40,7 +40,7 @@ MED	Every sentence in that x is important.		up		every	x	x
 MED	x is no laughing matter.		up		no		x									
 MED	All is in the hands of x, therefore wash them often.		up		all			x								
 MED	Some x bloom in spring and others in autumn.		up	some				x								
-MED	x can not exist without water.		up		without		x	x								
+MED	x can not exist without water.		down		without		x	x								
 help-test-contexts	We have to abolish all x , because they are deadly to mankind .		down	all			x	x								
 help-test-contexts	I want to learn all x on this list by July .		down	all				x								
 help-test-contexts	all x study English .		down	all			x	x								

@@ -1,12 +1,11 @@
 from nli_xy.encoding import parse_encode_config
-from interventions.intervention import construct_intervention_prompts
+from interventions.interventions import construct_intervention_prompts
 from interventions.intervention_model import Model
-from result_utils import compute_aggregate_metrics, process_intervention_results
+from interventions.result_utils import compute_aggregate_metrics, process_intervention_results
 from experiments.constants import ENCODE_CONFIG_FILE
 from loguru import logger
 import pandas as pd
 import os
-import json
 import argparse
 
 if __name__=="__main__":
@@ -18,6 +17,7 @@ if __name__=="__main__":
     PARAMETERS = {
         'seed' : 3,  # to allow consistent sampling
     }
+
     intervention_types = ['0', '1', '2', '3']
     RESULTS_DIR='experiments/results/'
 
@@ -34,10 +34,10 @@ if __name__=="__main__":
         )
 
         for intervention_type in intervention_types:
-            interventions = construct_intervention_prompts(intervention_type, encode_config, args)
+            interventions = construct_intervention_prompts(intervention_type, encode_config, args, sample_size=20)
             intervention_results = model.intervention_experiment(interventions)
 
-            results_df = process_intervention_results(interventions, intervention_results, representation=rep_name)
+            results_df = process_intervention_results(intervention_results)
             metrics_dict = compute_aggregate_metrics(results_df, single_result=False)
 
 

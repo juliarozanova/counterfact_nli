@@ -9,14 +9,9 @@
         "device": "cuda"
     }, 
     "representations": {
-        "roberta-large-mnli-help": {
-            "tokenizer": "roberta-large-mnli", 
-            "encoder_model": "./models/roberta-large-mnli-help",
-            "embedding_size": 2048
-        }, 
-        "roberta-large-mnli": {
-            "tokenizer": "roberta-large-mnli", 
-            "encoder_model": "roberta-large-mnli",
+        "infobert": {
+            "tokenizer": "./models/infobert-checkpoint",
+            "encoder_model": "./models/infobert-checkpoint",
             "embedding_size": 2048
         }
     }

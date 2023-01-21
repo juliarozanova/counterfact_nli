@@ -11,7 +11,6 @@ from nli_xy.encoding import load_encoder_model, load_tokenizer, build_dataset
 from nli_xy.datasets import load_nli_data, convert_nlixy_to_nli, NLI_2label_Dataset
 from nli_xy.analysis.utils import accuracy_from_meta_df
 
-
 three_class_models_2_is_entailment = ['roberta-large-mnli']
 
 three_class_models_0_is_entailment =  [

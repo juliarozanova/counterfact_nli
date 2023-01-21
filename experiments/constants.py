@@ -1,26 +1,15 @@
-
 DATA_PATH = "data/"
-ENCODE_CONFIG_FILE = 'data/full_encode_configs.json'
+ENCODE_CONFIG_FILE = 'data/encode_configs.json'
 
 MODELS = [
-    'bert-base-uncased-snli',
-    'bert-base-uncased-snli-help',
-    'roberta-large-mnli', 
-    'roberta-large-mnli-help',
-    'facebook/bart-large-mnli',
-    'facebook/bart-large-mnli-help',
-]
-
-THREE_CLASS_MODELS = [
-    'bert-base-uncased-snli',
-    'roberta-large-mnli', 
-    'facebook/bart-large-mnli',
-]
-
-TWO_CLASS_MODELS = [
-    'bert-base-uncased-snli-help',
-    'roberta-large-mnli-help',
-    'facebook/bart-large-mnli-help',
+    'roberta-large-snli_mnli_fever_anli_r1_r2_r3',
+    # 'facebook/bart-large-mnli-help',
+    # 'facebook/bart-large-mnli',
+    # 'bert-base-uncased-snli-help',
+    # 'bert-base-uncased-snli',
+    # 'roberta-large-mnli-help',
+    # 'roberta-large-mnli', 
+    # 'infobert', 
 ]
 
 DATASET_NAMES = [
@@ -39,7 +28,9 @@ TOKENIZERS = {
     'roberta-large-mnli-help': 'roberta-large-mnli',
     'roberta-large-mnli-double_finetuning': 'roberta-large-mnli',
     'facebook/bart-large-mnli': 'facebook/bart-large-mnli',
-    'facebook/bart-large-mnli-help': 'facebook/bart-large-mnli'
+    'facebook/bart-large-mnli-help': 'facebook/bart-large-mnli',
+    'infobert': './models/infobert-checkpoint',
+    'roberta-large-snli_mnli_fever_anli_r1_r2_r3': 'ynie/roberta-large-snli_mnli_fever_anli_r1_r2_r3-nli',
 }
 
 MODEL_HANDLES = {
@@ -48,8 +39,21 @@ MODEL_HANDLES = {
     'roberta-large-mnli': 'roberta-large-mnli',
     'roberta-large-mnli-help': './models/roberta-large-mnli-help',
     'roberta-large-mnli-double_finetuning': './models/roberta-large-mnli-double_finetuning',
+    'roberta-large-snli_mnli_fever_anli_r1_r2_r3': 'ynie/roberta-large-snli_mnli_fever_anli_r1_r2_r3-nli',
     'facebook/bart-large-mnli': 'facebook/bart-large-mnli',
-    'facebook/bart-large-mnli-help': './models/facebook-bart-large-mnli-help'
+    'facebook/bart-large-mnli-help': './models/facebook-bart-large-mnli-help',
+    'infobert': './models/infobert-checkpoint',
+}
+
+LABEL2ID_2CLASS = {
+    "entailment": 0,
+    "ENTAILMENT": 0,
+    "non-entailment": 1,
+    "NON_ENTAILMENT": 1,
+    "contradiction": 1,
+    "CONTRADICTION": 1,
+    "neutral": 1,
+    "NEUTRAL": 1,
 }
 
 LABEL2ID = {
@@ -58,16 +62,27 @@ LABEL2ID = {
         'neutral': 2, 
         'contradiction': 0
     },
-
+    'infobert': {
+        'entailment': 2, 
+        'neutral': 1, 
+        'contradiction': 0,
+    },
     'bert-base-uncased-snli-help': {
         'entailment': 1,
-        'neutral': 2, 
+        'neutral': 0, 
         'contradiction': 2
     },
+
     'roberta-large-mnli': {
         'entailment': 2,
         'neutral': 1, 
         'contradiction': 0
+    },
+    # no idea actually, check
+    'roberta-large-mnli-double-finetuning': {
+        'entailment': 1,
+        'neutral': 0, 
+        'contradiction': 2
     },
     'roberta-large-mnli-help': {
         'entailment': 1,
